@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كشف الأشياء - TensorFlow.js و COCO-SSD</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <h1><i class="fas fa-robot"></i> تطبيق كشف الأشياء في الوقت الحقيقي</h1>
+    
+    <div id="controls">
+        <div class="controls-group">
+            <button id="toggle-button" disabled>
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>جاري التحميل...</span>
+            </button>
+            <button id="camera-switch" class="hidden">
+                <i class="fas fa-camera"></i>
+                <span>تبديل الكاميرا</span>
+            </button>
+            <button id="screenshot-button" class="hidden">
+                <i class="fas fa-camera-retro"></i>
+                <span>التقاط صورة</span>
+            </button>
+        </div>
+        
+        <div id="status">
+            <i class="fas fa-sync fa-spin"></i>
+            <span>جاري تحميل النموذج والكاميرا...</span>
+        </div>
+        
+        <div class="controls-group">
+            <button id="clear-log-button">
+                <i class="fas fa-trash-alt"></i>
+                <span>مسح السجل</span>
+            </button>
+            <button id="export-log-button">
+                <i class="fas fa-download"></i>
+                <span>تصدير السجل</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- إحصائيات الاكتشاف -->
+    <div id="stats-section" class="hidden">
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3><i class="fas fa-bullseye"></i> إجمالي الاكتشافات</h3>
+                <div class="stat-value" id="total-detections">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-eye"></i> الأشياء المكتشفة حالياً</h3>
+                <div class="stat-value" id="current-detections">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-tachometer-alt"></i> معدل الإطارات</h3>
+                <div class="stat-value" id="fps-counter">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-star"></i> أعلى دقة</h3>
+                <div class="stat-value" id="highest-confidence">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detection-container">
+        <div class="camera-indicator">
+            <i class="fas fa-video"></i>
+            <span id="camera-status">كاميرا: غير نشطة</span>
+        </div>
+        <div class="detection-counter">
+            <i class="fas fa-object-group"></i>
+            <span id="live-counter">0</span>
+        </div>
+        <video id="webcam-video" autoplay muted playsinline></video>
+        <canvas id="detection-canvas"></canvas>
+    </div>
+    
+    <div id="log-section">
+        <div id="log-header">
+            <h2><i class="fas fa-history"></i> سجل الاكتشافات الأخيرة</h2>
+            <div class="log-controls">
+                <button id="filter-log-button">
+                    <i class="fas fa-filter"></i>
+                    <span>تصفية</span>
+                </button>
+                <button id="pause-log-button">
+                    <i class="fas fa-pause"></i>
+                    <span>إيقاف السجل</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="log-filters" class="hidden">
+            <!-- ستتم إضافة خيارات التصفية عبر JavaScript -->
+        </div>
+        
+        <ul id="detection-log-list">
+            <!-- سيتم ملء هذا عبر JavaScript -->
+        </ul>
+        
+        <div id="empty-log-message" style="text-align: center; padding: 20px; color: #aaa;">
+            <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <p>لم يتم اكتشاف أي أشياء بعد. ابدأ الكشف لترى النتائج هنا.</p>
+        </div>
+    </div>
+
+    <div class="footer-developer">
+        <i class="fas fa-code"></i> المبرمج الصانع: 
+        <span class="developer-name">HAMZA</span>
+        (اللقب الإنجليزي: <span class="developer-name">The Coder</span>)
+        <i class="fas fa-laptop-code"></i>
+    </div>
+
+    <!-- المكتبات الخارجية -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <!-- ملف JavaScript الخاص بالتطبيق -->
+    <script src="script.js"></script>
+
+</body>
+</html>
