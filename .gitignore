@@ -1,9 +1,15 @@
+# الملفات المؤقتة
 *.log
-__pycache__/
-*.pyc
-.env
-node_modules/
 *.~
+*.pyc
+__pycache__/
+
+# المجلدات الحساسة
+node_modules/
+
+# الملفات السرية
 .env
-.env
-.env
+
+# ملفات النظام
+.DS_Store
+Thumbs.db
