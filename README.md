@@ -5,16 +5,12 @@
   <img src="https://img.shields.io/badge/python-3.9-green?style=for-the-badge" />
   <img src="https://img.shields.io/badge/telegram-bot-26A5E4?style=for-the-badge" />
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge" />
+  <img src="https://img.shields.io/github/issues/bdalrhmnhmzt13-glitch/bot-hamza?style=for-the-badge" />
+  <img src="https://img.shields.io/github/issues-pr/bdalrhmnhmzt13-glitch/bot-hamza?style=for-the-badge" />
+  <img src="https://img.shields.io/github/forks/bdalrhmnhmzt13-glitch/bot-hamza?style=for-the-badge" />
+  <img src="https://img.shields.io/github/stars/bdalrhmnhmzt13-glitch/bot-hamza?style=for-the-badge" />
 </p>
-
-<p align="center">
-  <b>🤖 بوت تيليجرام متخصص في نشر الأحاديث النبوية الشريفة مع شرحها المبسط</b>
-</p>
-
 ---
-
-## 👋 مرحباً، أنا Hamza_Root
-
 <img align="right" src="https://github-readme-stats.vercel.app/api?username=bdalrhmnhmzt13-glitch&show_icons=true&theme=tokyonight&hide_border=true" width="400"/>
 
 مبرمج ومطور ويب من **دمشق، سوريا** 🇸🇾 شغوف بتطوير حلول مبتكرة ومشاركة المعرفة مع المجتمع.
