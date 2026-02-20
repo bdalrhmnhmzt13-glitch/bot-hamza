@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import logging
+from datetime import datetime
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    CommandHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    filters
+)
+import messages
+from media_manager import MediaManager
+
+logger = logging.getLogger(__name__)
+
+# حالات المحادثة
+SELECTING_ACTION, WAITING_FOR_IMAGE, WAITING_FOR_POST = range(3)
+
+class ChannelDashboard:
+    """لوحة تحكم القناة"""
+    
+    def __init__(self, bot_app, channel_id, admin_ids=None):
+        self.app = bot_app
+        self.channel_id = channel_id
+        self.admin_ids = admin_ids or []  # قائمة IDs المشرفين
+        self.media_manager = MediaManager()
+        self.setup_handlers()
+    
+    def setup_handlers(self):
+        """إضافة معالجات الأوامر"""
+        # أمر لوحة التحكم
+        self.app.add_handler(CommandHandler("dashboard", self.dashboard_command))
+        
+        # معالج الأزرار
+        self.app.add_handler(CallbackQueryHandler(self.button_handler))
+        
+        # محادثة إضافة صورة
+        conv_handler = ConversationHandler(
+            entry_points=[CallbackQueryHandler(self.add_image_start, pattern="^add_image$")],
+            states={
+                WAITING_FOR_IMAGE: [MessageHandler(filters.PHOTO, self.receive_image)],
+            },
+            fallbacks=[CommandHandler("cancel", self.cancel)],
+        )
+        self.app.add_handler(conv_handler)
+        
+        # محادثة إضافة منشور
+        conv_handler2 = ConversationHandler(
+            entry_points=[CallbackQueryHandler(self.add_post_start, pattern="^add_post$")],
+            states={
+                WAITING_FOR_POST: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_post)],
+            },
+            fallbacks=[CommandHandler("cancel", self.cancel)],
+        )
+        self.app.add_handler(conv_handler2)
+    
+    async def is_admin(self, user_id):
+        """التحقق من أن المستخدم مشرف"""
+        if not self.admin_ids:
+            return True  # إذا لم تحدد مشرفين، الكل مسموح له
+        return user_id in self.admin_ids
+    
+    async def dashboard_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """عرض لوحة التحكم"""
+        user_id = update.effective_user.id
+        
+        if not await self.is_admin(user_id):
+            await update.message.reply_text("❌ عذراً، هذه اللوحة للمشرفين فقط.")
+            return
+        
+        keyboard = [
+            [InlineKeyboardButton("📊 إحصائيات القناة", callback_data="stats")],
+            [InlineKeyboardButton("🖼️ إرسال صورة للقناة", callback_data="send_image")],
+            [InlineKeyboardButton("📝 إرسال منشور للقناة", callback_data="send_post")],
+            [InlineKeyboardButton("➕ إضافة صورة للمكتبة", callback_data="add_image")],
+            [InlineKeyboardButton("✏️ إضافة منشور للمكتبة", callback_data="add_post")],
+            [InlineKeyboardButton("📋 عرض المحتويات", callback_data="list_contents")],
+            [InlineKeyboardButton("🎲 إرسال محتوى عشوائي", callback_data="random_content")],
+            [InlineKeyboardButton("❌ إغلاق", callback_data="close")]
+        ]
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(
+            "🎛️ *لوحة تحكم القناة*\n\nاختر ما تريد القيام به:",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    
+    async def button_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """معالج الضغط على الأزرار"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = update.effective_user.id
+        if not await self.is_admin(user_id):
+            await query.edit_message_text("❌ ليس لديك صلاحية.")
+            return
+        
+        if query.data == "stats":
+            await self.show_stats(update, context)
+        elif query.data == "send_image":
+            await self.send_image_to_channel(update, context)
+        elif query.data == "send_post":
+            await self.send_post_to_channel(update, context)
+        elif query.data == "add_image":
+            await self.add_image_start(update, context)
+        elif query.data == "add_post":
+            await self.add_post_start(update, context)
+        elif query.data == "list_contents":
+            await self.list_contents(update, context)
+        elif query.data == "random_content":
+            await self.send_random_content(update, context)
+        elif query.data == "close":
+            await query.edit_message_text("✅ تم إغلاق لوحة التحكم.")
+    
+    async def show_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """عرض إحصائيات القناة"""
+        query = update.callback_query
+stats_text = f"""
+📊 *إحصائيات القناة*
+
+📌 *الاسم:* {chat.title}
+🆔 *المعرف:* `{chat.id}`
+{members_text}
+📝 *الوصف:* {chat.description or 'لا يوجد'}
+
+🖼️ *الصور في المكتبة:* {self.media_manager.list_contents()['images_count']}
+📄 *المنشورات:* {self.media_manager.list_contents()['posts_count']}
+"""
+            """
+            
+            keyboard = [[InlineKeyboardButton("🔙 رجوع", callback_data="back")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await query.edit_message_text(
+                stats_text,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            await query.edit_message_text(f"❌ خطأ: {e}")
+    
+    async def send_image_to_channel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """إرسال صورة للقناة"""
+        query = update.callback_query
+        
+        image_path = self.media_manager.get_random_image()
+        if not image_path:
+            await query.edit_message_text("❌ لا توجد صور في المكتبة. أضف صوراً أولاً.")
+            return
+        
+        try:
+            with open(image_path, 'rb') as photo:
+                await context.bot.send_photo(
+                    chat_id=self.channel_id,
+                    photo=photo,
+                    caption="🖼️ *صورة إسلامية*\n\nتم النشر بواسطة البوت",
+                    parse_mode='Markdown'
+                )
+            
+            await query.edit_message_text("✅ تم إرسال الصورة للقناة بنجاح!")
+        except Exception as e:
+            await query.edit_message_text(f"❌ خطأ في الإرسال: {e}")
+    
+    async def send_post_to_channel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """إرسال منشور نصي للقناة"""
+        query = update.callback_query
+        
+        post = self.media_manager.get_random_post()
+        if not post:
+            await query.edit_message_text("❌ لا توجد منشورات. أضف منشورات أولاً.")
+            return
+        
+        try:
+            await context.bot.send_message(
+                chat_id=self.channel_id,
+                text=post,
+                parse_mode='Markdown'
+            )
+            
+            await query.edit_message_text("✅ تم إرسال المنشور للقناة بنجاح!")
+        except Exception as e:
+            await query.edit_message_text(f"❌ خطأ في الإرسال: {e}")
+    
+    async def add_image_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """بدء إضافة صورة"""
+        query = update.callback_query
+        await query.edit_message_text(
+            "🖼️ أرسل لي الصورة التي تريد إضافتها للمكتبة.\n"
+            "أو أرسل /cancel للإلغاء."
+        )
+        return WAITING_FOR_IMAGE
+    
+    async def receive_image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """استقبال الصورة المضافة"""
+        photo = update.message.photo[-1]
+        file = await context.bot.get_file(photo.file_id)
+        
+        # حفظ الصورة
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"image_{timestamp}.jpg"
+        filepath = f"images/{filename}"
+        
+        await file.download_to_drive(filepath)
+        
+        await update.message.reply_text(f"✅ تم إضافة الصورة بنجاح!\nالاسم: {filename}")
+        return ConversationHandler.END
+    
+    async def add_post_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """بدء إضافة منشور"""
+        query = update.callback_query
+        await query.edit_message_text(
+            "📝 أرسل لي النص الذي تريد إضافته كمنشور.\n"
+            "أو أرسل /cancel للإلغاء."
+        )
+        return WAITING_FOR_POST
+    
+    async def receive_post(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """استقبال المنشور المضاف"""
+        text = update.message.text
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"post_{timestamp}.txt"
+        filepath = f"posts/{filename}"
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(text)
+        
+        await update.message.reply_text(f"✅ تم إضافة المنشور بنجاح!\nالاسم: {filename}")
+        return ConversationHandler.END
+    
+    async def list_contents(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """عرض محتويات المكتبة"""
+        query = update.callback_query
+        contents = self.media_manager.list_contents()
+        
+        text = "📋 *محتويات المكتبة*\n\n"
+        text += f"🖼️ *الصور:* {contents['images_count']}\n"
+        for img in contents['images'][:10]:  # عرض أول 10 فقط
+            text += f"  • {img}\n"
+        
+        text += f"\n📄 *المنشورات:* {contents['posts_count']}\n"
+        for post in contents['posts'][:10]:
+            text += f"  • {post}\n"
+        
+        if contents['images_count'] > 10 or contents['posts_count'] > 10:
+            text += "\n*(يوجد المزيد...)*"
+        
+        keyboard = [[InlineKeyboardButton("🔙 رجوع", callback_data="back")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(
+            text,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    
+    async def send_random_content(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """إرسال محتوى عشوائي للقناة"""
+        query = update.callback_query
+        content = self.media_manager.get_random_content()
+        
+        try:
+            if content['type'] == 'image_text':
+                with open(content['image'], 'rb') as photo:
+                    await context.bot.send_photo(
+                        chat_id=self.channel_id,
+                        photo=photo,
+                        caption=content['text'],
+                        parse_mode='Markdown'
+                    )
+            elif content['type'] == 'image_only':
+                with open(content['image'], 'rb') as photo:
+                    await context.bot.send_photo(
+                        chat_id=self.channel_id,
+                        photo=photo
+                    )
+            else:  # text_only
+                await context.bot.send_message(
+                    chat_id=self.channel_id,
+                    text=content['text'],
+                    parse_mode='Markdown'
+                )
+            
+            await query.edit_message_text("✅ تم إرسال محتوى عشوائي للقناة!")
+        except Exception as e:
+            await query.edit_message_text(f"❌ خطأ: {e}")
+    
+    async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """إلغاء العملية"""
+        await update.message.reply_text("✅ تم الإلغاء.")
+        return ConversationHandler.END

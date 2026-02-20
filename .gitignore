@@ -1,0 +1,17 @@
+# ملفات البيئة
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ملفات النظام
+.DS_Store
+Thumbs.db
+*.log
+nohup.out
+
+# مجلدات الصور والمنشورات (اختياري - ارفعها أو لا)
+# images/
+# posts/
