@@ -12,7 +12,7 @@
 </p>
 ---
 <img align="right" src="https://github-readme-stats.vercel.app/api?username=bdalrhmnhmzt13-glitch&show_icons=true&theme=tokyonight&hide_border=true" width="400"/>
-
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/cywoda?referralCode=Oiog7O)
 مبرمج ومطور ويب من **دمشق، سوريا** 🇸🇾 شغوف بتطوير حلول مبتكرة ومشاركة المعرفة مع المجتمع.
 
 ### 🎯 عني
